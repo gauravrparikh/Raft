@@ -1,0 +1,6 @@
+Introduction
+- This is a minimalist implementation of Raft to understand distributed concensus algorithms 
+- Each node acts as a server with some data. 
+- The leader is arbitrarily elected at the beginning 
+- Each Node is associated with a distinct port on which it is listening for heartbeats, and also each port is broadcasting its heartbeats to a distinct port 
+
