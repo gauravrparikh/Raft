@@ -4,6 +4,7 @@ import threading
 import random
 import fire
 from enum import Enum
+import communications
 
 
 """
@@ -14,7 +15,13 @@ and tells servers when it is safe to apply log entries to their state machines.
 
 
 class Server:
-    def __init__(self, data, election_time_out, role="Follower", in_socket_port=random.randint(10000, 60000), out_socket_port=random.randint(10000, 60000)):
+    def __init__(self, data, election_time_out, role="Follower", 
+                server_in_socket_port=random.randint(10000, 60000), 
+                server_out_socket_port=random.randint(10000, 60000)
+                server_in_socket_port=random.randint(10000, 60000), 
+                server_out_socket_port=random.randint(10000, 60000)
+                ):
+                
         # persistent state on all servers
         self.current_term = 0
         self.voted_for = None
@@ -32,11 +39,19 @@ class Server:
         self.election_time_out = election_time_out
         self.role = role
 
-        # Each node has a socket where it is listening for RPCs
+        # Each server has a socket where it is listening for RPCs from other servers
         self.in_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.in_socket.bind(('localhost', in_socket_port))
 
-        # Each node has a socket where it is sending RPCs
+        # Each server has a socket where it is sending RPCs to other servers
+        self.out_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.out_socket.bind(('localhost',out_socket_port ))
+
+        # Each server has a socket where it is listening for RPCs from clients
+        self.in_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.in_socket.bind(('localhost', in_socket_port))
+
+        # Each server has a socket where it is sending RPCs to clients
         self.out_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.out_socket.bind(('localhost',out_socket_port ))
        
@@ -86,6 +101,14 @@ class Server:
     
     def handle_node(self, node_socket: socket.socket, node_address: tuple[str, int]):
         pass
+
+    def begin_election(self):
+        self.current_term += 1
+        self.voted_for = self.in_socket.getsockname()
+        
+        # send RequestVote RPCs to all other nodes
+        RequestVote(self.current_term, self.in_socket.getsockname(), len(self.log), self.log[-1][0], self.out_socket.getsockname())
+
 
     def handle_client(
         self, client_socket: socket.socket, client_address: tuple[str, int]

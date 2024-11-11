@@ -10,24 +10,20 @@ class RPC:
         self.follower_addr_ports = follower_addr_ports
         
 class Heartbeat(RPC, threading.Thread):
-    """
-    The heartbeat message is sent by the leader to all the followers to maintain its authority.
-    When a follower receives a heartbeat message, it resets its election timer.
-    """
     def __init__(self, leader_addr_port:tuple, follower_addr_ports:list[tuple]):
         """
-    
+        The heartbeat message is sent by the leader to all the followers to maintain its authority.
+        When a follower receives a heartbeat message, it resets its election timer.
         """
         RPC.__init__(self, leader_addr_port,follower_addr_ports)
         threading.Thread.__init__(self)
-        self.daemon = True
         self.start()
         
     def run(self):
         while True:
             time.sleep(5)
-            for addr_port in self.follower_ports:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            for addr_port in self.follower_addr_ports:
+                s = socket.socket(self.leader_addr_port)
                 s.connect(addr_port)
                 s.sendall("Heartbeat")
             s.close()
@@ -38,6 +34,11 @@ class RequestVote(RPC,threading.Thread):
         threading.Thread.__init__(self)
         self.daemon = True
         self.start()
+        for addr_port in self.follower_ports:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(addr_port)
+            s.sendall("RequestVote")
+            s.close()
         
     def run(self):
         pass
